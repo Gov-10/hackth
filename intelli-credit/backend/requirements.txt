@@ -1,0 +1,8 @@
+django
+django-ninja
+requests
+whitenoise
+uvicorn
+gunicorn
+boto3
+python-dotenv
