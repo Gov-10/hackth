@@ -2,6 +2,7 @@ from ninja import NinjaAPI
 import os, uuid, boto3
 from dotenv import load_dotenv
 from .schema import UploadSchema, UploadResp
+from ninja.errors import HttpError
 load_dotenv()
 s3 = boto3.client('s3',
     region_name=os.getenv("S3_REGION"),
@@ -26,6 +27,15 @@ def upload_file(request, payload:UploadSchema):
         ExpiresIn = 600
             )
     return {"presigned_url": presigned_url, "file_key": key}
+
+@api.post("/risk/score")
+def risk_score(request, payload:UploadSchema):
+    if not payload.company:
+        raise HTTPError(404, "company name not entered")
+
+
+
+        
 
     
 
