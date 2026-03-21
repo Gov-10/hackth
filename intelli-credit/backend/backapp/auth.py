@@ -1,0 +1,2 @@
+class CustomAuth():
+    pass

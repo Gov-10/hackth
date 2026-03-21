@@ -1,5 +1,6 @@
 from ninja import Schema
 from typing import Optional
+from datetime import datetime
 
 class UploadSchema(Schema):
     company:str
@@ -13,3 +14,12 @@ class UploadSchema(Schema):
 class UploadResp(Schema):
     presigned_url:str
     file_key:str
+
+class HistorySchema(Schema):
+    timestamp:datetime
+    cam_content:str
+    file_key:str
+    file_url:str
+    email:str
+
+
