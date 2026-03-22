@@ -19,9 +19,10 @@ api = NinjaAPI()
 
 @api.post("/upload", response=UploadResp, auth=CustomAuth())
 def upload_file(request, payload:UploadSchema):
-    company = request.auth
+    email = request.auth
+    company=get_object_or_404(Company, email=email)
     file_id = str(uuid.uuid4())
-    key = f"docs/{company}/{file_id}-{payload.file_name}"
+    key = f"docs/{company.name}/{file_id}-{payload.file_name}"
     presigned_url=generate_url(key, 'put_object')
     return {"presigned_url": presigned_url, "file_key": key}
 
