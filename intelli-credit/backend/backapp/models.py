@@ -17,7 +17,7 @@ class History(models.Model):
     file_key=models.CharField(max_length=250)
     timestamp=models.DateTimeField(auto_now=True)
     cam_content=models.TextField(null=True, blank=True)
-    job_id=models.CharField(max_length=200)
+    job_id=models.CharField(max_length=200, unique=True, db_index=True)
     status=models.CharField(max_length=500)
     def __str__(self):
         return f"{self.company.email}-{self.timestamp}"
