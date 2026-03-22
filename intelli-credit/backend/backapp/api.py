@@ -7,6 +7,7 @@ from .auth import CustomAuth
 from .models import History, Company
 from django.shortcuts import get_object_or_404
 from typing import List
+from .utils.s3_gen import generate_url
 load_dotenv()
 s3 = boto3.client('s3',
     region_name=os.getenv("S3_REGION"),
@@ -21,15 +22,7 @@ def upload_file(request, payload:UploadSchema):
     company = payload.company
     file_id = str(uuid.uuid4())
     key = f"docs/{company}/{file_id}-{payload.file_name}"
-    presigned_url = s3.generate_presigned_url(
-        ClientMethod = 'put_object',
-        Params = {
-                'Bucket': bucket,
-                "Key" : key,
-                "ContentType": payload.content_type,
-            },
-        ExpiresIn = 600
-            )
+    presigned_url=generate_url(key, 'put_object')
     return {"presigned_url": presigned_url, "file_key": key}
 
 @api.get("/history", auth=CustomAuth(), response=List[HistorySchema])
@@ -39,16 +32,7 @@ def histo(request):
         raise HttpError(404, "Company not found")
     company=get_object_or_404(Company, email=email)
     history=History.objects.filter(company=company).order_by("-timestamp")[:50]
-    url=None #TODO: Presigned URL code
-    return [{"timestamp": h.timestamp,"cam_content": h.cam_content,"file_key": h.file_key,"email": h.company.email if h.company else None,"file_url": None}
-    for h in histories
-]
-
-
-    
-
-
-
+    return [{"timestamp": h.timestamp, "cam_content": h.cam_content, "file_key": h.file_key, email:h.company.email, "file_url": generate_url(h.file_key, 'get_object')} for h in history] 
         
 
     
