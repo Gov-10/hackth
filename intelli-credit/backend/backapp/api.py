@@ -1,7 +1,7 @@
 from ninja import NinjaAPI
 import os, uuid, boto3
 from dotenv import load_dotenv
-from .schema import UploadSchema, UploadResp, HistorySchema
+from .schema import UploadSchema, UploadResp, HistorySchema, ResearchSchema, ExtractSchema
 from ninja.errors import HttpError
 from .auth import CustomAuth
 from .models import History, Company
@@ -19,7 +19,7 @@ api = NinjaAPI()
 
 @api.post("/upload", response=UploadResp, auth=CustomAuth())
 def upload_file(request, payload:UploadSchema):
-    company = payload.company
+    company = request.auth
     file_id = str(uuid.uuid4())
     key = f"docs/{company}/{file_id}-{payload.file_name}"
     presigned_url=generate_url(key, 'put_object')
@@ -32,10 +32,24 @@ def histo(request):
         raise HttpError(404, "Company not found")
     company=get_object_or_404(Company, email=email)
     history=History.objects.filter(company=company).order_by("-timestamp")[:50]
-    return [{"timestamp": h.timestamp, "cam_content": h.cam_content, "file_key": h.file_key, email:h.company.email, "file_url": generate_url(h.file_key, 'get_object')} for h in history] 
+    return [{"timestamp": h.timestamp, "cam_content": h.cam_content, "file_key": h.file_key, "email":h.company.email, "file_url": generate_url(h.file_key, 'get_object')} for h in history] 
         
+#TODO: Push job_id, status, gstin, companyName, sector variables,next_topic=research_done to topic=qualitative_notes in pubsub
+@api.post("/research", auth=CustomAuth())
+def rese(request, payload:ResearchSchema):
+    pass
 
+#TODO: Push file key (from frontend), job_id, status, next_topic=extracted-done, bucket name, file_name(from frontend), file_type(from frontend) to topic=extraction-topic in pubsub
+@api.post("/extract", auth=CustomAuth())
+def extrac(request, payload:ExtractSchema):
+    email=request.auth
+    company=get_object_or_404(Company, email=email)
+    job_id=str(uuid.uuid4())
+    History.objects.create(company=company, file_key=payload.file_key, job_id=job_id, status="queued")
+    #Push karna baaki hai bhai
+    return {"job_id": job_id, "status": "queued"}
     
+#TODO: Subscribe to aggregator topic, write to DB
 
 
 
