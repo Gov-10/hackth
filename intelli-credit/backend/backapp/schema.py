@@ -22,4 +22,18 @@ class HistorySchema(Schema):
     file_url:str
     email:str
 
+class ResearchSchema(Schema):
+    job_id:str
+    status:str
+    gstin:str
+    companyName:str
+    sector:str
+
+class ExtractSchema(Schema):
+    file_key:str
+    job_id:str
+    status:str
+    file_name:str
+    file_type:str
+
 

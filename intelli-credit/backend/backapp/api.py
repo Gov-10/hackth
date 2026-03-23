@@ -38,7 +38,12 @@ def histo(request):
 #TODO: Push job_id, status, gstin, companyName, sector variables,next_topic=research_done to topic=qualitative_notes in pubsub
 @api.post("/research", auth=CustomAuth())
 def rese(request, payload:ResearchSchema):
-    pass
+    job_id, status=payload.job_id, payload.status
+    gstin, companyName= payload.gstin, payload.companyName
+    sector= payload.sector
+    return None
+
+    
 
 #TODO: Push file key (from frontend), job_id, status, next_topic=extracted-done, bucket name, file_name(from frontend), file_type(from frontend) to topic=extraction-topic in pubsub
 @api.post("/extract", auth=CustomAuth())
