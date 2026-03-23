@@ -38,10 +38,13 @@ def histo(request):
 #TODO: Push job_id, status, gstin, companyName, sector variables,next_topic=research_done to topic=qualitative_notes in pubsub
 @api.post("/research", auth=CustomAuth())
 def rese(request, payload:ResearchSchema):
-    job_id, status=payload.job_id, payload.status
-    gstin, companyName= payload.gstin, payload.companyName
-    sector= payload.sector
-    return None
+    email = request.auth
+    company = get_object_or_404(Company, email=email)
+    history = get_object_or_404(History, job_id=job_id, company=company)
+    history.status = 'processing'
+    history.save()
+    message = {}  #message fill karo-> kal tak
+    return {"status": "processing", "job_id": job_id}
 
     
 
