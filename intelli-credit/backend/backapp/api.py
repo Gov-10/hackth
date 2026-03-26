@@ -45,8 +45,8 @@ def upload_file(request, payload:UploadSchema):
     if not user:
         raise HttpError(404, "User not found")
     company=get_object_or_404(Company, name=payload.name, handled_by=user)
-    file_id = str(uuid.uuid4())
-    key = f"docs/{company.name}/{file_id}-{payload.file_name}"
+    input_file_id = str(uuid.uuid4())
+    key = f"docs/{company.id}/{input_file_id}-{payload.file_name}"
     presigned_url=generate_url(key, 'put_object')
     return {"presigned_url": presigned_url, "file_key": key}
 
@@ -57,7 +57,7 @@ def histo(request, payload:HistoryInpSchema):
         raise HttpError(404, "User not found")
     company=get_object_or_404(Company, handled_by=user, name=payload.name)
     history=History.objects.filter(company=company).order_by("-timestamp")[:50]
-    return [{"timestamp": h.timestamp, "cam_content": h.cam_content, "file_key":h.file_key, "name":h.company.name, "file_url": generate_url(h.file_key, 'get_object'), "handled_by": h.handled_by.email} for h in history] 
+    return [{"timestamp": h.timestamp, "cam_content": h.cam_content, "input_file_key":h.input_file_key, "cam_file_key": h.cam_file_key, "name":h.company.name, "file_url": generate_url(h.cam_file_key, 'get_object') if h.cam_file_key else None, "handled_by": h.handled_by.email, "uploaded_url": generate_url(h.input_file_key, 'get_object') if h.input_file_key else None, "status": h.status} for h in history] 
         
 
 @api.post("/research", auth=CustomAuth())
@@ -67,11 +67,11 @@ def rese(request, payload:ResearchSchema):
         raise HttpError(404, "User not found")
     company = get_object_or_404(Company, handled_by=user, name=payload.name)
     history = get_object_or_404(History, job_id=payload.job_id, company=company)
-    history.status = 'processing'
+    history.status = 'researching'
     history.save()
     message = {"job_id": payload.job_id, "context": {"gstin": company.gstin, "sector": company.sector, "name":company.name}, "input": {"qualitative_notes": payload.qualitative_notes}, "pipeline": {"next_topic": "research-done"}}
     publish_message(RESEARCH_TOPIC, message)
-    return {"status": "processing", "job_id": payload.job_id}
+    return {"status": "researching", "job_id": payload.job_id}
 
     
 @api.post("/extract", auth=CustomAuth())
@@ -81,8 +81,8 @@ def extrac(request, payload:ExtractSchema):
         raise HttpError(404, "User not found")
     company=get_object_or_404(Company, name=payload.name, handled_by=user)
     job_id=str(uuid.uuid4())
-    History.objects.create(company=company, file_key=payload.file_key, job_id=job_id, status="queued", handled_by=user)
-    message = {"job_id": job_id, "file_key": payload.file_key, "bucket_name": payload.bucket_name, "file_name": payload.file_name, "file_type": payload.file_type, "pipeline": {"next_topic": "extracted-done"} }
+    History.objects.create(company=company, input_file_key=payload.input_file_key, job_id=job_id, status="queued", handled_by=user)
+    message = {"job_id": job_id, "file_key": payload.input_file_key, "bucket_name": bucket, "file_name": payload.file_name, "file_type": payload.file_type, "pipeline": {"next_topic": "extracted-done"} }
     publish_message(EXTRACTION_TOPIC, message)
     return {"job_id": job_id, "status": "queued"}
     
@@ -100,19 +100,18 @@ def aggre(request):
             return {"status": "duplicate ignored"}
         history.status= "completed"
         history.cam_content=data.get("cam_content")
-        history.file_key= data.get("file_key")
+        history.cam_file_key= data.get("cam_file_key")
         history.save()
         return {"status": "ok"}
     except Exception as e:
         print("Error: ", e)
-        return {"status": "error"}
+        return {"status": "ok"}
 
 @api.post("/get-cam", auth=CustomAuth())
 def getCamRepo(request, payload:CamSchema):
     user=request.auth
     history=get_object_or_404(History, job_id=payload.job_id, handled_by=user)
-    company=get_object_or_404(Company, handled_by=user)
-    key= f"cam/{company.name}/{file_id}"
+    key= history.cam_file_key
     url = generate_url(key, "get_object")
     return {"url": url}
 

@@ -22,9 +22,17 @@ class Company(models.Model):
 class History(models.Model):
     company=models.ForeignKey(Company, on_delete=models.CASCADE)
     handled_by=models.ForeignKey(IntelliUser, on_delete=models.CASCADE)
-    file_key=models.TextField()
-    job_id=models.CharField(max_length=100, unique=True)
-    status=models.CharField(max_length=50)
+    input_file_key= models.CharField(max_length=200)
+    cam_file_key=models.CharField(max_length=200, null=True, blank=True)
+    job_id=models.CharField(max_length=100, unique=True, db_index=True)
+    STATUS_CHOICES = [
+        ("queued", "Queued"),
+        ("processing", "Processing"),
+        ("researching", "Researching"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+    ]
+    status=models.CharField(max_length=50, choices=STATUS_CHOICES, default="queued")
     cam_content=models.TextField(null=True, blank=True)
     timestamp=models.DateTimeField(auto_now_add=True)
     def __str__(self):
