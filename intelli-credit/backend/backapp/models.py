@@ -5,7 +5,7 @@ from django.db import models
 class IntelliUser(models.Model):
     cognito_sub = models.CharField(max_length=500, unique=True)
     email = models.EmailField()
-    created_at=models.DateTimeField(auto_now=True)
+    created_at=models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"{self.email}"
 
@@ -25,7 +25,7 @@ class History(models.Model):
     file_key=models.TextField()
     job_id=models.CharField(max_length=100, unique=True)
     status=models.CharField(max_length=50)
-    cam_content=models.TextField()
-    timestamp=models.DateTimeField(auto_now=True)
+    cam_content=models.TextField(null=True, blank=True)
+    timestamp=models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"{self.company.name}-{self.job_id}-{self.timestamp}"

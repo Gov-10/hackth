@@ -16,7 +16,8 @@ class HistorySchema(Schema):
     cam_content:str
     file_key:str
     file_url:str
-    email:str
+    name:str
+    handled_by:str
 
 class ResearchSchema(Schema):
     job_id:str
@@ -24,6 +25,7 @@ class ResearchSchema(Schema):
     gstin:str
     name:str
     sector:str
+    qualitative_notes:str
 
 class ExtractSchema(Schema):
     name:str
