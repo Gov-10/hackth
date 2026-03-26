@@ -27,8 +27,8 @@ class HistorySchema(Schema):
     input_file_key:str
     cam_file_key:str
     name:str
-    file_url:str
-    handled_by:str
+    file_url:Optional[str]=None
+    handled_by:Optional[str]=None
     uploaded_url:str
 
 class ResearchSchema(Schema):
@@ -40,7 +40,7 @@ class ExtractSchema(Schema):
     name:str
     input_file_key:str
     file_name:str
-    file_type:str
+    file_type:Optional[str]=None
 
 class CamSchema(Schema):
     job_id:str

@@ -1,3 +1,4 @@
+from .models import IntelliUser
 from ninja.security import HttpBearer
 from jose import jwt, jwk
 from jose.utils import base64url_decode
@@ -34,7 +35,14 @@ def validate_token(token:str):
 class CustomAuth(HttpBearer):
     def authenticate(self, request, token):
         try:
-            return validate_token(token)
+            claims = validate_token(token)
+            sub = claims["sub"]
+            email = claims.get("email", "")
+            user, _ = IntelliUser.objects.get_or_create(
+            cognito_sub=sub,
+            defaults={"email": email}
+        )
+            return user
         except Exception as e:
             print("Auth error:", e)
             return None
