@@ -45,5 +45,6 @@ class CreateSchema(Schema):
 
 class HistoryInpSchema(Schema):
     name:str
-
+class CamSchema(Schema):
+    job_id:str
 

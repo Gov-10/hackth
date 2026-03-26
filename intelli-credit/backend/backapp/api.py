@@ -1,7 +1,7 @@
 from ninja import NinjaAPI
-import os, uuid, boto3, json
+import os, uuid, boto3, json, base64
 from dotenv import load_dotenv
-from .schema import UploadSchema, UploadResp, HistorySchema, ResearchSchema, ExtractSchema, CreateSchema, HistoryInpSchema
+from .schema import UploadSchema, UploadResp, HistorySchema, ResearchSchema, ExtractSchema, CreateSchema, HistoryInpSchema, CamSchema
 from ninja.errors import HttpError
 from .auth import CustomAuth
 from .models import History, Company
@@ -57,7 +57,7 @@ def histo(request, payload:HistoryInpSchema):
         raise HttpError(404, "User not found")
     company=get_object_or_404(Company, handled_by=user, name=payload.name)
     history=History.objects.filter(company=company).order_by("-timestamp")[:50]
-    return [{"timestamp": h.timestamp, "cam_content": h.cam_content, "file_key": h.file_key, "name":h.company.name, "file_url": generate_url(h.file_key, 'get_object'), "handled_by": h.handled_by.email} for h in history] 
+    return [{"timestamp": h.timestamp, "cam_content": h.cam_content, "file_key":h.file_key, "name":h.company.name, "file_url": generate_url(h.file_key, 'get_object'), "handled_by": h.handled_by.email} for h in history] 
         
 
 @api.post("/research", auth=CustomAuth())
@@ -87,6 +87,40 @@ def extrac(request, payload:ExtractSchema):
     return {"job_id": job_id, "status": "queued"}
     
 #TODO: Subscribe to aggregator topic, write to DB
+@api.post("/pubsub/aggregator")
+def aggre(request):
+    try:
+        body= json.loads(request.body)
+        dat = body["message"]["data"]
+        dec = base64.b64decode(dat).decode("utf-8")
+        data = json.loads(dec)
+        job_id=data["job_id"]
+        history = get_object_or_404(History, job_id=job_id)
+        if history.status=="completed":
+            return {"status": "duplicate ignored"}
+        history.status= "completed"
+        history.cam_content=data.get("cam_content")
+        history.file_key= data.get("file_key")
+        history.save()
+        return {"status": "ok"}
+    except Exception as e:
+        print("Error: ", e)
+        return {"status": "error"}
+
+@api.post("/get-cam", auth=CustomAuth())
+def getCamRepo(request, payload:CamSchema):
+    user=request.auth
+    history=get_object_or_404(History, job_id=payload.job_id, handled_by=user)
+    company=get_object_or_404(Company, handled_by=user)
+    key= f"cam/{company.name}/{file_id}"
+    url = generate_url(key, "get_object")
+    return {"url": url}
+
+
+
+
+    
+
 
 
 
